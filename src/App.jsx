@@ -515,6 +515,7 @@ function LandingPage({ onGetStarted, onLogin }) {
 
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 24, background: "var(--gdim)", border: "1px solid var(--gglow)", borderRadius: 100, padding: "7px 18px", animation: "float 4s ease-in-out infinite" }}>
           <span style={{ fontSize: 14 }}>✦</span>
+          </div>
           
         <h1 style={{ fontFamily: "Syne", fontWeight: 900, fontSize: "clamp(36px,8vw,72px)", lineHeight: 1.0, marginBottom: 20, background: "linear-gradient(135deg,#fff 0%,var(--green) 50%,var(--blue) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", maxWidth: 700 }}>
           Your Fitness &<br />Nutrition OS
