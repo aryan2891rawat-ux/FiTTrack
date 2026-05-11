@@ -5,10 +5,10 @@ const css = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=JetBrains+Mono:wght@400;600;700&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   :root{
-    --bg:#07080f; --s1:#0c0e1b; --s2:#11142a; --card:#121525;
+    --bg:#0f0900; --s1:#1a0e00; --s2:#1f1200; --card:#1a1000;
     --border:#1c1f38; --b2:#242848;
-    --green:#00f0a0; --gdim:rgba(0,240,160,0.07); --gglow:rgba(0,240,160,0.2);
-    --blue:#5b8fff; --bdim:rgba(91,143,255,0.08); --bglow:rgba(91,143,255,0.2);
+  --green:#ff6b00; --gdim:rgba(255,107,0,0.07); --gglow:rgba(255,107,0,0.2);
+--blue:#ff9a3c; --bdim:rgba(255,154,60,0.08); --bglow:rgba(255,154,60,0.2);
     --orange:#ff8c42; --pink:#ff4f8b; --yellow:#ffd166; --red:#ff5252; --purple:#a78bfa;
     --text:#eef0ff; --muted:#6470a0; --muted2:#2a2e52;
   }
@@ -39,7 +39,7 @@ const css = `
   .inp option{background:var(--s1);}
 
   .btn{
-    background:linear-gradient(135deg,var(--green),#00c4a0);color:#000;border:none;
+    background:linear-gradient(135deg,var(--green),#ff9a3c);color:#fff;border:none;
     border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
     padding:13px 22px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s,opacity 0.15s;
   }
