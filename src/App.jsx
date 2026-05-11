@@ -177,6 +177,27 @@ function useTypewriter(text, speed = 10) {
 }
 
 // ─── Gemini API helper ────────────────────────────────────────────────────────
+async function callGemini(prompt) {
+  const apiKey = process.env.REACT_APP_GEMINI_KEY;
+  if (!apiKey) throw new Error("REACT_APP_GEMINI_KEY not set");
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1200 },
+      }),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+}
 
 // ─── Charts ───────────────────────────────────────────────────────────────────
 function LineChart({ data, color = "var(--green)", height = 100, label = "c" }) {
@@ -373,7 +394,7 @@ function FoodSearch({ onAdd, targets }) {
     if (!q.trim() || q.length < 2) { setResults(null); return; }
     setLoading(true);
     try {
-      setResults([]);
+      const text = await callGemini(`You are a nutrition database. Return ONLY a valid JSON array (no markdown, no extra text) of up to 5 common food matches for: "${q}"\n\nEach item must have these exact fields:\n{"name":"Food name","serving":"1 serving (Xg)","calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0,"sugar":0,"sodium":0}\n\nAll numeric values must be integers. Use realistic nutrition data per serving. Return only the JSON array.`);
       const clean = text.replace(/```json|```/g, "").trim();
       setResults(JSON.parse(clean));
     } catch { setResults([]); }
@@ -487,6 +508,7 @@ function ManualEntry({ onAdd }) {
 function LandingPage({ onGetStarted, onLogin }) {
   const features = [
     { icon: "🥗", title: "Smart Nutrition Tracking", desc: "Log meals with AI-powered food search. Track calories, macros, fiber, sodium, sugar — every nutrient that matters." },
+    { icon: "🤖", title: "AI Coaching", desc: "Get personalized coaching based on your real data. Powered by Google Gemini for data-driven insights." },
     { icon: "🍽️", title: "AI Meal Plans", desc: "Generate a full weekly meal plan tailored to your calorie targets, dietary preferences, and fitness goals." },
     { icon: "💪", title: "Workout Recommender", desc: "Get AI-generated workout plans customized to your fitness level, available equipment, and goals." },
     { icon: "📊", title: "Nutrient Intelligence", desc: "Automated flags for nutritional imbalances with 7-day trend analysis and personalized suggestions." },
@@ -515,8 +537,9 @@ function LandingPage({ onGetStarted, onLogin }) {
 
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 24, background: "var(--gdim)", border: "1px solid var(--gglow)", borderRadius: 100, padding: "7px 18px", animation: "float 4s ease-in-out infinite" }}>
           <span style={{ fontSize: 14 }}>✦</span>
-          </div>
-          
+          <span style={{ color: "var(--green)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", fontFamily: "Syne" }}>POWERED BY GOOGLE GEMINI AI</span>
+        </div>
+
         <h1 style={{ fontFamily: "Syne", fontWeight: 900, fontSize: "clamp(36px,8vw,72px)", lineHeight: 1.0, marginBottom: 20, background: "linear-gradient(135deg,#fff 0%,var(--green) 50%,var(--blue) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", maxWidth: 700 }}>
           Your Fitness &<br />Nutrition OS
         </h1>
@@ -687,7 +710,8 @@ function AboutPage({ onBack }) {
     { phase: "3. Data Preparation", icon: "⚙️", desc: "Clean food log entries, normalize nutrient values, engineer time-series features from daily logs, and handle missing data via imputation." },
     { phase: "4. Modeling", icon: "🧬", desc: "Train and tune the 6 ML models — DNN for prediction, LSTM for forecasting, Random Forest for classification, clustering for segmentation." },
     { phase: "5. Evaluation", icon: "📊", desc: "Validate models on held-out nutritional data. Assess prediction RMSE, classification F1 scores, recommendation relevance@K, and cluster cohesion." },
-    
+    { phase: "6. Deployment", icon: "🚀", desc: "Integrate models into the FitTrack AI interface. Serve predictions client-side via Gemini API with real-time personalization and continuous learning from new logs." },
+  ];
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", paddingBottom: 60 }}>
@@ -765,7 +789,7 @@ function AboutPage({ onBack }) {
         <div className="card">
           <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14, color: "var(--yellow)", marginBottom: 14 }}>🛠️ Tech Stack</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            {[["Frontend", "React + TypeScript"], ["Styling", "CSS-in-JS, custom design system"], ["Hosting", "Netlify (CD via GitHub)"], ["Storage", "Browser localStorage"], ["Build", "react-scripts (CRA)"]].map(([k, v]) => (
+            {[["Frontend", "React + TypeScript"], ["Styling", "CSS-in-JS, custom design system"], ["AI API", "Google Gemini 1.5 Flash"], ["Hosting", "Netlify (CD via GitHub)"], ["Storage", "Browser localStorage"], ["Build", "react-scripts (CRA)"]].map(([k, v]) => (
               <div key={k} style={{ background: "var(--s1)", borderRadius: 10, padding: "10px 13px" }}>
                 <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.07em" }}>{k}</div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{v}</div>
@@ -816,11 +840,11 @@ Keep meals practical, realistic, and within ±100kcal of the daily target. After
 3 practical tips for preparing these meals efficiently.`;
 
     try {
-      
+      const text = await callGemini(prompt);
       setPlan(text);
       LS.set("ftp_mealplan", text);
     } catch (e) {
-      
+      setError(`Error: ${e.message}. Check that REACT_APP_GEMINI_KEY is set in Netlify environment variables.`);
     }
     setLoading(false);
   }
@@ -960,11 +984,11 @@ After all workout days add:
 2-3 important safety reminders for their fitness level.`;
 
     try {
-     
+      const text = await callGemini(prompt);
       setPlan(text);
       LS.set("ftp_workout", text);
     } catch (e) {
-      
+      setError(`Error: ${e.message}. Check that REACT_APP_GEMINI_KEY is set in Netlify environment variables.`);
     }
     setLoading(false);
   }
@@ -1167,57 +1191,35 @@ export default function FitTrackAI() {
     });
   }
 
-  const fetchCoach = async () => {
-  if (!aiCoach.trim()) return;
+  async function fetchCoach() {
+    if (!meta || coachLoading) return;
+    setCoachLoading(true);
+    setAiCoach("");
+    setCoachError("");
+    const wa = weekAvg;
+    const prompt = `You are an expert fitness and nutrition coach. Analyze this user's REAL tracked data and give specific, data-driven coaching in 4 sections.
 
-  setCoachLoading(true);
-  setCoachDone(false);
+Profile: ${profile.age}yo ${profile.gender}, goal: ${profile.goal}, activity: ${profile.activity}
+Targets: ${meta.cals} kcal | ${meta.protein}g protein | ${meta.carbs}g carbs | ${meta.fat}g fat | ${meta.fiber}g fiber
+Current streak: ${streak} days
+7-day averages: ${wa ? `${wa.calories} kcal | ${wa.protein}g protein | ${wa.carbs}g carbs | ${wa.fat}g fat | ${wa.fiber}g fiber | ${wa.sodium}mg sodium` : "Not enough data yet"}
+Today's intake: ${todayNutrients.calories} kcal | ${todayNutrients.protein}g protein | ${todayNutrients.carbs}g carbs | ${todayNutrients.fat}g fat
 
-  try {
-    const apiKey = process.env.REACT_APP_OPENROUTER_KEY;
+Respond with EXACTLY these 4 headers:
+## 📊 Nutrition Analysis
+## 🎯 Focus This Week
+## 💪 Training Tip
+## 🔑 One Key Change`;
 
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "meta-llama/llama-3.1-8b-instruct:free",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are FitTrack AI, an expert fitness and nutrition coach. Give concise workout, diet, calories and motivation advice.",
-            },
-            {
-              role: "user",
-              content: aiCoach,
-            },
-          ],
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    console.log(data);
-
-    const text =
-      data?.choices?.[0]?.message?.content ||
-      "No response from AI.";
-
-    setCoachOut(text);
-    setCoachDone(true);
-  } catch (error) {
-    console.error(error);
-    setCoachOut("Connection error.");
-  } finally {
+    try {
+      const text = await callGemini(prompt);
+      setAiCoach(text);
+      LS.set("ftp_coach", text);
+    } catch (e) {
+      setCoachError(`Connection error: ${e.message}. Make sure REACT_APP_GEMINI_KEY is set in your Netlify environment variables.`);
+    }
     setCoachLoading(false);
   }
-};
 
   // ── Screen routing ──
   if (screen === "landing") {
@@ -1466,7 +1468,7 @@ export default function FitTrackAI() {
                 <div style={{ width: 42, height: 42, borderRadius: 12, background: "var(--gdim)", border: "1.5px solid var(--gglow)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🤖</div>
                 <div>
                   <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 16 }}>AI Nutrition Coach</div>
-                
+                  <div style={{ fontSize: 12, color: "var(--muted)" }}>Powered by Google Gemini · Analyzes your real data</div>
                 </div>
               </div>
               {!aiCoach && !coachLoading && (
