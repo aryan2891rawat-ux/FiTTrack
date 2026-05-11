@@ -178,7 +178,7 @@ function useTypewriter(text, speed = 10) {
 
 // ─── Gemini API helper ────────────────────────────────────────────────────────
 async function callGemini(prompt) {
-  const apiKey = "AIzaSyBYchFnvlFbGeOEwggV0EdkFgWn5T4d2b4"
+  const apiKey = process.env.REACT_APP_GEMINI_KEY;
   if (!apiKey) throw new Error("REACT_APP_GEMINI_KEY not set");
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
