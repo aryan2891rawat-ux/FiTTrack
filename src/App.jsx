@@ -181,7 +181,7 @@ async function callGemini(prompt) {
   const apiKey = process.env.REACT_APP_GEMINI_KEY;
   if (!apiKey) throw new Error("REACT_APP_GEMINI_KEY not set");
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
